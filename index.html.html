@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Marwa Afif — Network & Systems Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --indigo: #3d2fa9;
+  --indigo-light: #5b4fcf;
+  --pink: #f0146e;
+  --cyan: #00e5ff;
+  --amber: #ffb300;
+  --bg: #080814;
+  --bg2: #0d0d20;
+  --bg3: #111128;
+  --text: #e8e8f0;
+  --muted: #7a7a9a;
+  --card: rgba(255,255,255,0.04);
+  --border: rgba(255,255,255,0.07);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--indigo-light);border-radius:3px;}
+
+/* Cursor */
+#cursor-dot{
+  position:fixed;width:8px;height:8px;
+  background:var(--cyan);border-radius:50%;
+  pointer-events:none;z-index:9999;
+  box-shadow:0 0 10px var(--cyan),0 0 20px var(--cyan);
+  transform:translate(-50%,-50%);
+  transition:transform .1s ease;
+}
+#cursor-ring{
+  position:fixed;width:36px;height:36px;
+  border:2px solid rgba(0,229,255,.5);border-radius:50%;
+  pointer-events:none;z-index:9998;
+  transform:translate(-50%,-50%);
+  transition:left .12s ease,top .12s ease;
+}
+
+/* Noise texture */
+body::before{
+  content:'';position:fixed;inset:0;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events:none;z-index:0;opacity:.6;
+}
+
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  cursor:none;overflow-x:hidden;
+}
+
+canvas#particles{
+  position:fixed;inset:0;z-index:0;
+  pointer-events:none;
+}
+
+/* Loading */
+#loader{
+  position:fixed;inset:0;background:var(--bg);
+  z-index:10000;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:24px;
+  transition:opacity .6s ease, visibility .6s ease;
+}
+#loader.fade{opacity:0;visibility:hidden;}
+.loader-initials{
+  font-family:'Syne',sans-serif;font-size:72px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--pink),var(--amber));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  animation:pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:.7;transform:scale(1);}50%{opacity:1;transform:scale(1.05);}}
+.loader-bar-track{width:200px;height:3px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+.loader-bar{
+  height:100%;width:0;border-radius:2px;
+  background:linear-gradient(90deg,var(--indigo-light),var(--pink),var(--cyan));
+  animation:loadbar 2s ease forwards;
+}
+@keyframes loadbar{to{width:100%;}}
+
+/* Navbar */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  padding:0 5%;height:64px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(8,8,20,.7);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  transform:translateY(-100%);
+  animation:navSlide .6s ease .5s forwards;
+}
+@keyframes navSlide{to{transform:translateY(0);}}
+.nav-logo{
+  font-family:'Syne',sans-serif;font-weight:800;font-size:20px;
+  background:linear-gradient(135deg,var(--cyan),var(--indigo-light));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.nav-links{display:flex;gap:32px;list-style:none;}
+.nav-links a{
+  color:var(--muted);font-size:14px;font-weight:500;text-decoration:none;
+  position:relative;padding-bottom:2px;transition:color .2s;
+}
+.nav-links a::after{
+  content:'';position:absolute;bottom:0;left:0;width:0;height:1px;
+  background:var(--cyan);transition:width .3s ease;
+}
+.nav-links a:hover{color:var(--text);}
+.nav-links a:hover::after{width:100%;}
+.nav-toggle{display:none;flex-direction:column;gap:5px;cursor:none;background:none;border:none;}
+.nav-toggle span{display:block;width:24px;height:2px;background:var(--text);border-radius:2px;}
+
+/* Sections */
+section{position:relative;z-index:1;padding:100px 5%;}
+
+/* ===== HERO ===== */
+#hero{
+  min-height:100vh;display:flex;align-items:center;
+  padding-top:120px;
+}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;max-width:1200px;margin:0 auto;width:100%;}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.2);
+  color:var(--cyan);padding:6px 14px;border-radius:100px;
+  font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+  margin-bottom:24px;
+}
+.hero-tag .dot{width:6px;height:6px;border-radius:50%;background:var(--cyan);animation:blink 1.4s ease-in-out infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+.hero-name{
+  font-family:'Syne',sans-serif;font-size:clamp(42px,6vw,80px);font-weight:800;
+  line-height:1.05;margin-bottom:16px;
+  background:linear-gradient(135deg,#fff 0%,var(--cyan) 30%,var(--pink) 60%,var(--amber) 100%);
+  background-size:200% 200%;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 4s ease-in-out infinite;
+}
+@keyframes shimmer{0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
+.hero-title{color:var(--muted);font-size:clamp(14px,2vw,18px);font-weight:400;margin-bottom:40px;letter-spacing:.02em;}
+.hero-btns{display:flex;gap:16px;flex-wrap:wrap;}
+.btn{
+  padding:12px 28px;border-radius:8px;font-size:14px;font-weight:600;
+  cursor:none;text-decoration:none;transition:all .25s ease;border:none;display:inline-block;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--indigo-light),var(--pink));color:#fff;
+  box-shadow:0 4px 24px rgba(240,20,110,.3);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(240,20,110,.4);}
+.btn-outline{
+  background:transparent;color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-outline:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-2px);}
+
+/* Hero Card */
+.hero-card-wrap{display:flex;justify-content:center;align-items:center;position:relative;}
+.hero-orb{
+  position:absolute;width:300px;height:300px;border-radius:50%;
+  background:radial-gradient(circle,rgba(93,79,207,.3) 0%,transparent 70%);
+  animation:orb 6s ease-in-out infinite;
+}
+@keyframes orb{0%,100%{transform:scale(1);}50%{transform:scale(1.1);}}
+.hero-ring{
+  position:absolute;width:280px;height:280px;border-radius:50%;
+  border:2px dashed rgba(0,229,255,.25);
+  animation:spin 20s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+.hero-card{
+  width:240px;padding:32px;
+  background:rgba(13,13,32,.8);border:1px solid var(--border);border-radius:20px;
+  backdrop-filter:blur(20px);text-align:center;
+  animation:float3d 6s ease-in-out infinite;
+  position:relative;z-index:2;
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+@keyframes float3d{
+  0%,100%{transform:translateY(0) rotate3d(1,1,0,2deg);}
+  33%{transform:translateY(-10px) rotate3d(1,-1,0,3deg);}
+  66%{transform:translateY(5px) rotate3d(-1,1,0,2deg);}
+}
+.card-avatar{
+  width:72px;height:72px;border-radius:50%;
+  background:linear-gradient(135deg,var(--indigo-light),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:24px;font-weight:800;color:#fff;
+  margin:0 auto 16px;
+  box-shadow:0 0 24px rgba(240,20,110,.4);
+}
+.card-role{color:var(--muted);font-size:12px;margin-bottom:20px;letter-spacing:.04em;}
+.card-name{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:4px;}
+.card-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-top:20px;}
+.stat{text-align:center;}
+.stat-num{font-family:'Syne',sans-serif;font-weight:700;font-size:20px;
+  background:linear-gradient(135deg,var(--cyan),var(--pink));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.stat-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-top:2px;}
+
+/* ===== SKILLS ===== */
+#skills{background:var(--bg2);}
+.section-header{margin-bottom:60px;}
+.section-eyebrow{
+  color:var(--cyan);font-size:12px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;margin-bottom:12px;
+}
+.section-title{
+  font-family:'Syne',sans-serif;font-size:clamp(28px,4vw,48px);font-weight:800;
+}
+.skills-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:900px;}
+.skill-item{margin-bottom:4px;}
+.skill-label{display:flex;justify-content:space-between;margin-bottom:8px;font-size:14px;font-weight:500;}
+.skill-pct{color:var(--muted);font-size:12px;}
+.skill-track{
+  height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;
+}
+.skill-fill{
+  height:100%;width:0;border-radius:3px;
+  background:linear-gradient(90deg,var(--indigo-light),var(--cyan));
+  transition:width 1.2s cubic-bezier(.4,0,.2,1);
+  position:relative;
+}
+.skill-fill.filled::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.35),transparent);
+  animation:sweep 1.2s ease .8s both;
+}
+@keyframes sweep{from{transform:translateX(-100%);}to{transform:translateX(200%);}}
+
+.chip-cloud{display:flex;flex-wrap:wrap;gap:10px;margin-top:48px;}
+.chip{
+  padding:7px 16px;border-radius:100px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  font-size:13px;font-weight:500;color:var(--text);
+  transition:all .2s ease;cursor:default;
+}
+.chip:hover{background:rgba(0,229,255,.12);border-color:rgba(0,229,255,.4);color:var(--cyan);transform:translateY(-4px);}
+
+/* ===== EXPERIENCE ===== */
+#experience{background:var(--bg);}
+.timeline{position:relative;max-width:800px;}
+.timeline::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:2px;
+  background:linear-gradient(180deg,var(--indigo-light),var(--pink),var(--cyan));
+}
+.exp-card{
+  margin-left:36px;margin-bottom:40px;padding:28px;
+  background:var(--card);border:1px solid var(--border);border-radius:16px;
+  transition:all .3s ease;position:relative;
+}
+.exp-card::before{
+  content:'';position:absolute;left:-44px;top:28px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--pink);border:2px solid var(--bg);
+  box-shadow:0 0 12px var(--pink);
+}
+.exp-card:hover{transform:translateX(6px);box-shadow:0 0 40px rgba(240,20,110,.1),0 0 0 1px rgba(240,20,110,.15);}
+.exp-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:8px;}
+.exp-title{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;}
+.exp-date{
+  color:var(--cyan);font-size:12px;font-weight:600;
+  background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.15);
+  padding:4px 12px;border-radius:100px;white-space:nowrap;
+}
+.exp-company{color:var(--muted);font-size:14px;margin-bottom:14px;}
+.exp-desc{font-size:14px;line-height:1.7;color:rgba(232,232,240,.75);}
+.exp-desc li{list-style:none;padding-left:16px;position:relative;margin-bottom:6px;}
+.exp-desc li::before{content:'→';position:absolute;left:0;color:var(--pink);font-size:12px;}
+.badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.badge{
+  padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  background:rgba(93,79,207,.15);color:var(--indigo-light);border:1px solid rgba(93,79,207,.25);
+}
+
+/* ===== PROJECTS ===== */
+#projects{background:var(--bg2);}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:24px;max-width:1100px;}
+.project-card{
+  padding:28px;background:var(--card);border:1px solid var(--border);
+  border-radius:16px;transition:all .3s ease;position:relative;overflow:hidden;
+}
+.project-card::before{
+  content:'';position:absolute;top:0;left:-100%;right:100%;height:2px;
+  background:linear-gradient(90deg,var(--indigo-light),var(--pink),var(--cyan));
+  transition:left .4s ease,right .4s ease;
+}
+.project-card:hover::before{left:0;right:0;}
+.project-card:hover{transform:translateY(-6px);box-shadow:0 20px 48px rgba(0,0,0,.4);}
+.project-emoji{font-size:32px;margin-bottom:16px;}
+.project-name{font-family:'Syne',sans-serif;font-weight:700;font-size:18px;margin-bottom:10px;}
+.project-desc{font-size:14px;color:rgba(232,232,240,.7);line-height:1.65;margin-bottom:16px;}
+.tags{display:flex;flex-wrap:wrap;gap:6px;}
+.tag{
+  padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;
+  background:rgba(0,229,255,.08);color:var(--cyan);border:1px solid rgba(0,229,255,.15);
+}
+
+/* ===== EDUCATION ===== */
+#education{background:var(--bg);}
+.edu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;max-width:1000px;margin-bottom:60px;}
+.edu-card{
+  padding:28px;background:var(--card);border:1px solid var(--border);
+  border-radius:16px;transition:all .3s ease;
+}
+.edu-card:hover{border-color:rgba(93,79,207,.4);box-shadow:0 0 32px rgba(93,79,207,.1);}
+.edu-year{color:var(--amber);font-size:12px;font-weight:600;margin-bottom:10px;letter-spacing:.06em;}
+.edu-degree{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;margin-bottom:6px;}
+.edu-school{color:var(--muted);font-size:14px;}
+
+.cert-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;max-width:1000px;margin-top:32px;}
+.cert-item{
+  padding:14px 20px;background:var(--card);border:1px solid var(--border);border-radius:12px;
+  display:flex;align-items:center;gap:12px;font-size:13px;
+  transition:all .2s ease;
+}
+.cert-item:hover{border-color:rgba(255,179,0,.3);color:var(--amber);}
+.cert-icon{font-size:18px;}
+
+/* Languages */
+.lang-row{display:flex;gap:16px;flex-wrap:wrap;margin-top:48px;}
+.lang-badge{
+  padding:10px 24px;border-radius:100px;font-size:14px;font-weight:600;
+  border:2px solid;display:flex;flex-direction:column;align-items:center;gap:2px;
+}
+.lang-level{font-size:10px;font-weight:400;opacity:.7;margin-top:2px;}
+.lang-ar{border-color:var(--cyan);color:var(--cyan);background:rgba(0,229,255,.08);}
+.lang-fr{border-color:var(--pink);color:var(--pink);background:rgba(240,20,110,.08);}
+.lang-en{border-color:var(--amber);color:var(--amber);background:rgba(255,179,0,.08);}
+
+/* ===== MARQUEE ===== */
+.marquee-wrap{
+  overflow:hidden;padding:24px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);
+  margin:60px 0;
+}
+.marquee-inner{
+  display:flex;gap:48px;width:max-content;
+  animation:marquee 20s linear infinite;
+}
+@keyframes marquee{to{transform:translateX(-50%);}}
+.marquee-item{
+  font-family:'Syne',sans-serif;font-size:14px;font-weight:600;
+  color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
+  white-space:nowrap;display:flex;align-items:center;gap:12px;
+}
+.marquee-item::after{content:'✦';color:var(--pink);font-size:10px;}
+
+/* ===== CONTACT ===== */
+#contact{background:var(--bg2);}
+.contact-inner{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;max-width:1000px;}
+.contact-cards{display:flex;flex-direction:column;gap:16px;}
+.contact-card{
+  display:flex;align-items:center;gap:16px;
+  padding:18px 22px;background:var(--card);border:1px solid var(--border);border-radius:12px;
+  transition:all .3s ease;
+}
+.contact-card:hover{transform:translateX(8px);border-color:rgba(0,229,255,.25);}
+.contact-icon{
+  width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.ci-email{background:rgba(0,229,255,.1);}
+.ci-phone{background:rgba(240,20,110,.1);}
+.ci-loc{background:rgba(255,179,0,.1);}
+.ci-avail{background:rgba(93,79,207,.1);}
+.contact-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+.contact-val{font-size:14px;font-weight:500;}
+
+.contact-avatar-wrap{display:flex;justify-content:center;align-items:center;position:relative;width:250px;height:250px;margin:0 auto;}
+.ripple{
+  position:absolute;border-radius:50%;border:2px solid;
+  animation:ripple 3s ease-in-out infinite;
+}
+.r1{width:120px;height:120px;border-color:rgba(0,229,255,.3);animation-delay:0s;}
+.r2{width:170px;height:170px;border-color:rgba(0,229,255,.2);animation-delay:.8s;}
+.r3{width:220px;height:220px;border-color:rgba(0,229,255,.1);animation-delay:1.6s;}
+@keyframes ripple{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.5;}}
+.contact-avatar{
+  width:90px;height:90px;border-radius:50%;
+  background:linear-gradient(135deg,var(--indigo-light),var(--pink));
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;
+  box-shadow:0 0 40px rgba(240,20,110,.4);
+  position:relative;z-index:2;
+}
+
+/* Footer */
+footer{
+  text-align:center;padding:32px;color:var(--muted);font-size:13px;
+  border-top:1px solid var(--border);position:relative;z-index:1;
+}
+
+/* Reveal animations */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease;}
+.reveal.from-left{transform:translateX(-30px);}
+.reveal.from-right{transform:translateX(30px);}
+.reveal.visible{opacity:1;transform:translate(0);}
+
+/* Mobile Nav */
+@media(max-width:768px){
+  .nav-links{display:none;position:absolute;top:64px;left:0;right:0;background:rgba(8,8,20,.95);
+    flex-direction:column;gap:0;padding:12px 0;border-bottom:1px solid var(--border);}
+  .nav-links.open{display:flex;}
+  .nav-links li{padding:12px 5%;}
+  .nav-toggle{display:flex;}
+  .hero-inner{grid-template-columns:1fr;gap:40px;}
+  .hero-card-wrap{order:-1;}
+  .skills-grid{grid-template-columns:1fr;}
+  .contact-inner{grid-template-columns:1fr;gap:48px;}
+  .contact-avatar-wrap{order:-1;}
+  section{padding:80px 5%;}
+}
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div id="loader">
+  <div class="loader-initials">MA</div>
+  <div class="loader-bar-track"><div class="loader-bar"></div></div>
+</div>
+
+<!-- Custom Cursor -->
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+
+<!-- Particle Canvas -->
+<canvas id="particles"></canvas>
+
+<!-- Navigation -->
+<nav id="navbar">
+  <div class="nav-logo">Marwa Afif</div>
+  <ul class="nav-links" id="navLinks">
+    <li><a href="#hero">Accueil</a></li>
+    <li><a href="#skills">Compétences</a></li>
+    <li><a href="#experience">Expérience</a></li>
+    <li><a href="#projects">Projets</a></li>
+    <li><a href="#education">Formation</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <button class="nav-toggle" id="navToggle" onclick="document.getElementById('navLinks').classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </button>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-inner">
+    <div class="hero-left reveal">
+      <div class="hero-tag"><span class="dot"></span> Disponible · Menzil Temime, Tunisie</div>
+      <h1 class="hero-name">Marwa<br>Afif</h1>
+      <p class="hero-title">Technicienne en Administration Réseaux & Systèmes<br>Cybersécurité · Supervision · Cloud</p>
+      <div class="hero-btns">
+        <a href="#contact" class="btn btn-primary">Me Contacter</a>
+        <a href="#experience" class="btn btn-outline">Voir mon parcours</a>
+      </div>
+    </div>
+    <div class="hero-card-wrap reveal from-right">
+      <div class="hero-orb"></div>
+      <div class="hero-ring"></div>
+      <div class="hero-card">
+        <div class="card-avatar">MA</div>
+        <div class="card-name">Marwa Afif</div>
+        <div class="card-role">Admin Réseaux & Systèmes</div>
+        <div class="card-stats">
+          <div class="stat"><div class="stat-num">3+</div><div class="stat-label">Stages</div></div>
+          <div class="stat"><div class="stat-num">5+</div><div class="stat-label">Certifs</div></div>
+          <div class="stat"><div class="stat-num">BAC+3</div><div class="stat-label">Niveau</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Compétences</div>
+    <h2 class="section-title">Stack technique</h2>
+  </div>
+  <div class="skills-grid" id="skillsGrid">
+    <!-- Skill bars injected by JS -->
+  </div>
+  <div class="chip-cloud" id="chipCloud"></div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Parcours</div>
+    <h2 class="section-title">Expérience professionnelle</h2>
+  </div>
+
+  <!-- Marquee -->
+  <div class="marquee-wrap">
+    <div class="marquee-inner" id="marquee"></div>
+  </div>
+
+  <div class="timeline">
+
+    <div class="exp-card reveal">
+      <div class="exp-header">
+        <div class="exp-title">Stage de Fin d'Études</div>
+        <div class="exp-date">Fév. 2026 – Mai 2026</div>
+      </div>
+      <div class="exp-company">BIAT IT · Le Kram, Tunis</div>
+      <ul class="exp-desc">
+        <li>Installation et configuration de la plateforme de supervision Zabbix sous Linux.</li>
+        <li>Intégration et monitoring des serveurs et équipements réseau via SNMP et agents Zabbix.</li>
+        <li>Couplage avec Wazuh SIEM et l'IDS/IPS Suricata pour analyser le trafic réseau en temps réel.</li>
+        <li>Création de dashboards et alertes pour le suivi des performances et la détection d'incidents.</li>
+        <li>Conception de tableaux de bord unifiés sur Grafana pour centraliser métriques et alertes de sécurité.</li>
+      </ul>
+      <div class="badge-row">
+        <span class="badge">Zabbix</span>
+        <span class="badge">Wazuh SIEM</span>
+        <span class="badge">Suricata IDS/IPS</span>
+        <span class="badge">Grafana</span>
+        <span class="badge">SNMP</span>
+        <span class="badge">Linux</span>
+      </div>
+    </div>
+
+    <div class="exp-card reveal">
+      <div class="exp-header">
+        <div class="exp-title">Stage Perfectionnement — Mini-SOC IA</div>
+        <div class="exp-date">Janv. 2025 – Févr. 2025</div>
+      </div>
+      <div class="exp-company">Sagemcom · Ezzahra, Tunis</div>
+      <ul class="exp-desc">
+        <li>Déploiement du SIEM/EDR Wazuh avec agents sur Windows et Ubuntu.</li>
+        <li>Intégration locale de l'IA (Phi-3-Mini via Ollama) pour l'analyse automatique des logs (Threat Hunting).</li>
+        <li>Développement d'un script Python avec interface chatbot pour interroger les journaux en langage naturel.</li>
+        <li>Simulation d'attaques : détection de malwares (EICAR), de force brute (PAM) et analyse des vulnérabilités.</li>
+      </ul>
+      <div class="badge-row">
+        <span class="badge">Wazuh</span>
+        <span class="badge">Python</span>
+        <span class="badge">Ollama/LLM</span>
+        <span class="badge">Threat Hunting</span>
+        <span class="badge">Ubuntu</span>
+        <span class="badge">Windows</span>
+      </div>
+    </div>
+
+    <div class="exp-card reveal">
+      <div class="exp-header">
+        <div class="exp-title">Stage Technicien</div>
+        <div class="exp-date">Janv. 2024 – Févr. 2024</div>
+      </div>
+      <div class="exp-company">Sagemcom · Ezzahra, Tunis</div>
+      <ul class="exp-desc">
+        <li>Découverte des environnements de travail en réseaux et systèmes informatiques.</li>
+        <li>Observation et manipulation des processus de gestion matérielle d'un poste de travail.</li>
+        <li>Apprentissage du fonctionnement des codes-barres et de leur intégration aux systèmes informatiques.</li>
+        <li>Introduction à la configuration du BIOS pour optimiser les paramètres d'un ordinateur.</li>
+      </ul>
+      <div class="badge-row">
+        <span class="badge">Hardware</span>
+        <span class="badge">Réseaux</span>
+        <span class="badge">BIOS</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Réalisations</div>
+    <h2 class="section-title">Projets</h2>
+  </div>
+  <div class="projects-grid">
+
+    <div class="project-card reveal">
+      <div class="project-emoji">🔭</div>
+      <div class="project-name">Solution de Supervision Réseau</div>
+      <p class="project-desc">Mise en place d'une infrastructure de supervision basée sur Zabbix, Wazuh et Suricata avec dashboards Grafana centralisés pour la détection d'intrusions en temps réel.</p>
+      <div class="tags">
+        <span class="tag">Zabbix</span>
+        <span class="tag">Wazuh</span>
+        <span class="tag">Suricata</span>
+        <span class="tag">Grafana</span>
+        <span class="tag">SNMP</span>
+      </div>
+    </div>
+
+    <div class="project-card reveal">
+      <div class="project-emoji">🤖</div>
+      <div class="project-name">Mini-SOC basé sur l'IA</div>
+      <p class="project-desc">Conception d'un SOC miniature avec Wazuh SIEM/EDR et intégration du modèle Phi-3-Mini via Ollama pour l'analyse automatique des logs et le Threat Hunting intelligent.</p>
+      <div class="tags">
+        <span class="tag">Python</span>
+        <span class="tag">Wazuh</span>
+        <span class="tag">Ollama</span>
+        <span class="tag">LLM</span>
+        <span class="tag">Chatbot</span>
+      </div>
+    </div>
+
+    <div class="project-card reveal">
+      <div class="project-emoji">🏢</div>
+      <div class="project-name">Infrastructure Active Directory</div>
+      <p class="project-desc">Mise en place d'une infrastructure Active Directory et DHCP sous Windows Server 2025, incluant gestion des utilisateurs, des groupes et des politiques de sécurité.</p>
+      <div class="tags">
+        <span class="tag">Active Directory</span>
+        <span class="tag">DHCP</span>
+        <span class="tag">Windows Server</span>
+        <span class="tag">GPO</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- EDUCATION & LANGUAGES -->
+<section id="education">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Formation</div>
+    <h2 class="section-title">Diplômes & Certifications</h2>
+  </div>
+  <div class="edu-grid">
+    <div class="edu-card reveal">
+      <div class="edu-year">2023 – 2026</div>
+      <div class="edu-degree">Licence Appliquée — Technologie de l'Informatique</div>
+      <div class="edu-school">ISET Tozeur</div>
+    </div>
+    <div class="edu-card reveal">
+      <div class="edu-year">2022 – 2023</div>
+      <div class="edu-degree">Baccalauréat — Économie et Gestion</div>
+      <div class="edu-school">Lycée Taib Mhiri, Menzil Temime</div>
+    </div>
+  </div>
+
+  <div class="section-eyebrow reveal" style="margin-bottom:20px;">Certifications</div>
+  <div class="cert-grid">
+    <div class="cert-item reveal"><span class="cert-icon">📡</span>CCNA : Présentation des réseaux</div>
+    <div class="cert-item reveal"><span class="cert-icon">🛡️</span>Cisco Introduction to Cybersecurity</div>
+    <div class="cert-item reveal"><span class="cert-icon">☁️</span>AWS Academy Cloud Foundations</div>
+    <div class="cert-item reveal"><span class="cert-icon">🐧</span>LPIC-1 – Linux Professional Institute (Jan. 2026)</div>
+    <div class="cert-item reveal"><span class="cert-icon">🎓</span>CCEP – Certified Cybersecurity Educator Pro</div>
+    <div class="cert-item reveal"><span class="cert-icon">🎣</span>CPPS – Certified Phishing Prevention Specialist</div>
+    <div class="cert-item reveal"><span class="cert-icon">🚀</span>CCSC – Cybersecurity Career Starter Cert.</div>
+  </div>
+
+  <div class="lang-row reveal" style="margin-top:52px;">
+    <div class="lang-badge lang-ar">العربية<span class="lang-level">Natif</span></div>
+    <div class="lang-badge lang-fr">Français<span class="lang-level">Intermédiaire</span></div>
+    <div class="lang-badge lang-en">English<span class="lang-level">Intermediate</span></div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="section-header reveal">
+    <div class="section-eyebrow">Contact</div>
+    <h2 class="section-title">Entrons en contact</h2>
+  </div>
+  <div class="contact-inner">
+    <div class="contact-cards">
+      <div class="contact-card reveal">
+        <div class="contact-icon ci-email">📧</div>
+        <div><div class="contact-label">Email</div><div class="contact-val">marwa.afif009@gmail.com</div></div>
+      </div>
+      <div class="contact-card reveal">
+        <div class="contact-icon ci-phone">📱</div>
+        <div><div class="contact-label">Téléphone</div><div class="contact-val">+216 99 595 515</div></div>
+      </div>
+      <div class="contact-card reveal">
+        <div class="contact-icon ci-loc">📍</div>
+        <div><div class="contact-label">Localisation</div><div class="contact-val">Menzil Temime, Tunisie</div></div>
+      </div>
+      <div class="contact-card reveal">
+        <div class="contact-icon ci-avail">✅</div>
+        <div><div class="contact-label">Disponibilité</div><div class="contact-val">Ouverte aux opportunités</div></div>
+      </div>
+    </div>
+    <div class="contact-avatar-wrap reveal from-right">
+      <div class="ripple r1"></div>
+      <div class="ripple r2"></div>
+      <div class="ripple r3"></div>
+      <div class="contact-avatar">MA</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Marwa Afif — Conçu avec passion ✦ Menzil Temime, Tunisie</p>
+</footer>
+
+<script>
+// ===== LOADER =====
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('loader').classList.add('fade');
+  }, 2200);
+});
+
+// ===== CURSOR =====
+const dot = document.getElementById('cursor-dot');
+const ring = document.getElementById('cursor-ring');
+let mx=0,my=0,rx=0,ry=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; dot.style.left=mx+'px'; dot.style.top=my+'px'; });
+(function animRing(){rx+=(mx-rx)*.12;ry+=(my-ry)*.12;ring.style.left=rx+'px';ring.style.top=ry+'px';requestAnimationFrame(animRing);})();
+
+// ===== PARTICLES =====
+(function(){
+  const c = document.getElementById('particles');
+  const ctx = c.getContext('2d');
+  let W,H,pts=[];
+  const COLORS=['#5b4fcf','#f0146e','#00e5ff','#ffb300'];
+  const resize=()=>{W=c.width=window.innerWidth;H=c.height=window.innerHeight;};
+  resize(); window.addEventListener('resize',resize);
+  for(let i=0;i<80;i++) pts.push({x:Math.random()*3000,y:Math.random()*3000,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,r:Math.random()*2+1,c:COLORS[Math.floor(Math.random()*4)]});
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;
+      ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fillStyle=p.c+'99';ctx.fill();
+    });
+    for(let i=0;i<pts.length;i++) for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y,d=Math.sqrt(dx*dx+dy*dy);
+      if(d<120){ctx.beginPath();ctx.moveTo(pts[i].x,pts[i].y);ctx.lineTo(pts[j].x,pts[j].y);
+        ctx.strokeStyle=pts[i].c+(Math.floor((1-d/120)*50)).toString(16).padStart(2,'0');
+        ctx.lineWidth=.5;ctx.stroke();}
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ===== SKILLS =====
+const skills = [
+  {name:'Linux / Unix',pct:88},
+  {name:'Wazuh SIEM',pct:85},
+  {name:'Suricata IDS/IPS',pct:82},
+  {name:'Zabbix',pct:85},
+  {name:'Grafana',pct:80},
+  {name:'Python',pct:72},
+  {name:'Réseaux (VLANs, DMZ)',pct:80},
+  {name:'AWS Cloud',pct:65},
+  {name:'Active Directory',pct:75},
+  {name:'SNMP / Monitoring',pct:82},
+];
+const chips = ['Wazuh','Suricata','Zabbix','Grafana','Linux','Python','SNMP','VLANs','Active Directory','DHCP','AWS','Ollama/LLM','Windows Server','CCNA','SIEM','EDR','DMZ','Cybersécurité'];
+const sg = document.getElementById('skillsGrid');
+skills.forEach(s=>{
+  sg.innerHTML+=`<div class="skill-item reveal"><div class="skill-label"><span>${s.name}</span><span class="skill-pct">${s.pct}%</span></div><div class="skill-track"><div class="skill-fill" data-pct="${s.pct}"></div></div></div>`;
+});
+const cc = document.getElementById('chipCloud');
+chips.forEach(ch=>{ cc.innerHTML+=`<span class="chip">${ch}</span>`; });
+
+// ===== MARQUEE =====
+const companies = ['BIAT IT','Sagemcom','ISET Tozeur','Cisco','AWS Academy','Linux Professional Institute','Red Team Leaders','Hack & Fix'];
+const m = document.getElementById('marquee');
+let str='';
+for(let i=0;i<2;i++) companies.forEach(c=>{str+=`<span class="marquee-item">${c}</span>`;});
+m.innerHTML=str;
+
+// ===== INTERSECTION OBSERVER =====
+const revealObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){ e.target.classList.add('visible'); revealObs.unobserve(e.target); }
+  });
+},{threshold:.15});
+document.querySelectorAll('.reveal').forEach(el=>revealObs.observe(el));
+
+// Skill bar animation
+const skillObs = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      const fill=e.target;
+      fill.style.width=fill.dataset.pct+'%';
+      setTimeout(()=>fill.classList.add('filled'),100);
+      skillObs.unobserve(fill);
+    }
+  });
+},{threshold:.5});
+document.querySelectorAll('.skill-fill').forEach(el=>skillObs.observe(el));
+</script>
+</body>
+</html>
